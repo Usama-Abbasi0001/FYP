@@ -53,7 +53,7 @@ export default function StudentDashboard() {
             animate={{ opacity: 1, scale: 1 }}
             className="mb-8 bg-gradient-to-br from-red-500/10 to-red-600/10 backdrop-blur-lg rounded-2xl p-8 border-2 border-red-500/30"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h2 className="text-white mb-2">Emergency SOS</h2>
                 <p className="text-gray-400 mb-4">
@@ -69,7 +69,7 @@ export default function StudentDashboard() {
                 whileTap={{ scale: 0.95 }}
                 onClick={handleSOS}
                 disabled={sosActive}
-                className={`w-32 h-32 rounded-full ${
+                className={`w-full max-w-[220px] h-32 rounded-full mx-auto lg:mx-0 ${
                   sosActive
                     ? 'bg-red-600 animate-pulse'
                     : 'bg-gradient-to-br from-red-600 to-red-500 hover:from-red-500 hover:to-red-400'

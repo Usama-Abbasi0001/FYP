@@ -1,22 +1,21 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import StatCard from '../components/StatCard';
 import { Users, Shield, AlertTriangle, Activity, MapPin, Bell, TrendingUp, Battery } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { motion } from 'motion/react';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 export default function AdminDashboard() {
   const [liveAlerts, setLiveAlerts] = useState<any[]>([]);
-
-  // Mock data - Replace with real Firebase data
-  const stats = {
+  const [stats, setStats] = useState({
     totalStudents: 1247,
     activeDevices: 1189,
     todayAlerts: 3,
-    emergencyCalls: 0,
-    batteryLow: 12,
-    safeZoneViolations: 5
-  };
+    emergencyCalls: 0
+  });
 
   const weeklyAlerts = [
     { day: 'Mon', alerts: 2 },
@@ -65,8 +64,60 @@ export default function AdminDashboard() {
   ];
 
   useEffect(() => {
-    // Simulate real-time alerts
-    setLiveAlerts(recentAlerts);
+    const today = new Date();
+
+    const parseDate = (value: any) => {
+      if (!value) return null;
+      if (typeof value?.toDate === 'function') return value.toDate();
+      return new Date(value);
+    };
+
+    const studentsQuery = query(collection(db, 'users'), where('role', '==', 'student'));
+    const studentSub = onSnapshot(studentsQuery, (snapshot) => {
+      if (snapshot.size > 0) {
+        setStats((prev) => ({ ...prev, totalStudents: snapshot.size }));
+      }
+    });
+
+    const locationsSub = onSnapshot(collection(db, 'studentLocations'), (snapshot) => {
+      if (snapshot.size > 0) {
+        setStats((prev) => ({ ...prev, activeDevices: snapshot.size }));
+      }
+    });
+
+    const alertsSub = onSnapshot(collection(db, 'alerts'), (snapshot) => {
+      if (snapshot.size > 0) {
+        let todayAlerts = 0;
+        let emergencyCalls = 0;
+        const alerts: any[] = [];
+
+        snapshot.docs.forEach((doc) => {
+          const data = doc.data();
+          const createdAt = parseDate(data.createdAt ?? data.timestamp ?? data.time);
+          const isToday = createdAt?.toDateString() === today.toDateString();
+          if (isToday) todayAlerts += 1;
+
+          const type = String(data.type ?? data.alertType ?? '').toLowerCase();
+          const severity = String(data.severity ?? '').toLowerCase();
+          if (type.includes('sos') || type.includes('emergency') || severity === 'high') {
+            emergencyCalls += 1;
+          }
+
+          alerts.push({ id: doc.id, ...data });
+        });
+
+        setStats((prev) => ({ ...prev, todayAlerts, emergencyCalls }));
+        setLiveAlerts(alerts);
+      } else {
+        setLiveAlerts(recentAlerts);
+      }
+    });
+
+    return () => {
+      studentSub();
+      locationsSub();
+      alertsSub();
+    };
   }, []);
 
   const getSeverityColor = (severity: string) => {
@@ -96,38 +147,46 @@ export default function AdminDashboard() {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatCard
-              icon={Users}
-              label="Total Students"
-              value={stats.totalStudents}
-              change="+12 this month"
-              changeType="positive"
-              color="blue"
-            />
-            <StatCard
-              icon={Shield}
-              label="Active Devices"
-              value={stats.activeDevices}
-              change={`${Math.round((stats.activeDevices / stats.totalStudents) * 100)}% online`}
-              changeType="positive"
-              color="green"
-            />
-            <StatCard
-              icon={AlertTriangle}
-              label="Today's Alerts"
-              value={stats.todayAlerts}
-              change="-2 from yesterday"
-              changeType="positive"
-              color="orange"
-            />
-            <StatCard
-              icon={Activity}
-              label="Emergency Calls"
-              value={stats.emergencyCalls}
-              change="All clear"
-              changeType="positive"
-              color="purple"
-            />
+            <Link to="/dashboard/admin/students" className="block rounded-3xl transition hover:-translate-y-1 hover:shadow-2xl hover:shadow-slate-900/20">
+              <StatCard
+                icon={Users}
+                label="Total Students"
+                value={stats.totalStudents}
+                change="+12 this month"
+                changeType="positive"
+                color="blue"
+              />
+            </Link>
+            <Link to="/dashboard/admin/devices" className="block rounded-3xl transition hover:-translate-y-1 hover:shadow-2xl hover:shadow-slate-900/20">
+              <StatCard
+                icon={Shield}
+                label="Active Devices"
+                value={stats.activeDevices}
+                change={`${Math.round((stats.activeDevices / stats.totalStudents) * 100)}% online`}
+                changeType="positive"
+                color="green"
+              />
+            </Link>
+            <Link to="/dashboard/admin/alerts" className="block rounded-3xl transition hover:-translate-y-1 hover:shadow-2xl hover:shadow-slate-900/20">
+              <StatCard
+                icon={AlertTriangle}
+                label="Today's Alerts"
+                value={stats.todayAlerts}
+                change="-2 from yesterday"
+                changeType="positive"
+                color="orange"
+              />
+            </Link>
+            <Link to="/dashboard/admin/emergencies" className="block rounded-3xl transition hover:-translate-y-1 hover:shadow-2xl hover:shadow-slate-900/20">
+              <StatCard
+                icon={Activity}
+                label="Emergency Calls"
+                value={stats.emergencyCalls}
+                change="All clear"
+                changeType="positive"
+                color="purple"
+              />
+            </Link>
           </div>
 
           {/* Charts Section */}
@@ -201,9 +260,9 @@ export default function AdminDashboard() {
             transition={{ delay: 0.2 }}
             className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10"
           >
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
               <h3 className="text-white">Recent Alerts</h3>
-              <button className="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-all border border-blue-500/30">
+              <button className="w-full sm:w-auto px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-all border border-blue-500/30">
                 View All
               </button>
             </div>
@@ -228,10 +287,10 @@ export default function AdminDashboard() {
                         </span>
                       </div>
                       <p className="text-gray-400">{alert.student}</p>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                        <span className="flex items-center gap-1">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-2 text-sm text-gray-500">
+                        <span className="flex flex-1 min-w-0 items-center gap-1 truncate text-gray-300">
                           <MapPin className="w-4 h-4" />
-                          {alert.location}
+                          <span className="truncate">{alert.location}</span>
                         </span>
                         <span>{alert.time}</span>
                       </div>

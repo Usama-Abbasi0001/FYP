@@ -89,7 +89,7 @@ export default function Sidebar() {
       </button>
 
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-xs transform overflow-y-auto bg-[#0a1628] border-r border-white/10 transition-transform duration-300 ease-out md:static md:translate-x-0 md:w-full md:max-w-none md:flex md:flex-col ${
+        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-xs transform overflow-y-auto bg-[#0a1628] border-r border-white/10 transition-transform duration-300 ease-out md:static md:translate-x-0 md:w-full md:max-w-none md:flex md:flex-col lg:w-72 xl:w-80 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users collection: allow users to read their own profile and admins to read others.
+    match /users/{userId} {
+      allow read: if request.auth != null && (
+        request.auth.uid == userId ||
+        // admins can read any user document
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+
+      // Allow a parent to update only their own `parentOf` array (linking children).
+      allow update: if request.auth != null
+        && request.auth.uid == userId
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'parent'
+        // only allow changes to the `parentOf` field
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['parentOf'])
+        // ensure parentOf is an array in the request
+        && request.resource.data.parentOf is list;
+
+      // Prevent clients from creating or deleting arbitrary user documents via client SDK
+      allow create: if false;
+      allow delete: if false;
+    }
+
+    // Default: authenticated admins can read other top-level collections as needed.
+    match /{document=**} {
+      allow read: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow write: if false;
+    }
+  }
+}
