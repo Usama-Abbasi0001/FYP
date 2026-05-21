@@ -63,7 +63,7 @@ export default function Sidebar() {
   const navItems = getNavigationItems();
 
   return (
-    <div className="w-64 h-screen bg-[#0a1628] border-r border-white/10 flex flex-col">
+    <div className="w-full md:w-64 h-auto md:h-screen bg-[#0a1628] border-r border-white/10 flex flex-col">
       {/* Logo Section */}
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center gap-3">
@@ -78,7 +78,7 @@ export default function Sidebar() {
       </div>
 
       {/* Navigation Items */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto md:overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.path;

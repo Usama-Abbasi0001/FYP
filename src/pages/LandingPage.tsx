@@ -41,7 +41,7 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="border-b border-white/10 backdrop-blur-lg">
         <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/30">
                 <Shield className="w-6 h-6 text-blue-400" />
@@ -74,14 +74,14 @@ export default function LandingPage() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h1 className="text-white mb-6 text-5xl">
+          <h1 className="text-white mb-6 text-3xl sm:text-5xl leading-tight">
             Smart Campus Safety System
           </h1>
           <p className="text-gray-400 text-xl max-w-3xl mx-auto mb-8">
             Comprehensive real-time student safety monitoring platform powered by IoT, GPS tracking,
             and instant emergency response systems
           </p>
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               to="/signup"
               className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-500 hover:to-blue-400 transition-all shadow-lg shadow-blue-500/30 text-lg"
@@ -162,9 +162,9 @@ export default function LandingPage() {
       {/* Footer */}
       <div className="border-t border-white/10 mt-20">
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <p className="text-gray-500">© 2026 Smart Campus Safety System. All rights reserved.</p>
-            <div className="flex gap-6 text-gray-500">
+            <div className="flex flex-wrap gap-4 text-gray-500 md:gap-6">
               <a href="#" className="hover:text-white transition-colors">Privacy</a>
               <a href="#" className="hover:text-white transition-colors">Terms</a>
               <a href="#" className="hover:text-white transition-colors">Contact</a>

@@ -126,12 +126,12 @@ export default function LiveTracking() {
   }, []);
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-[#0a1628] via-[#152238] to-[#1a2f4a]">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-gradient-to-br from-[#0a1628] via-[#152238] to-[#1a2f4a]">
       <Sidebar />
 
-      <div className="flex-1 flex">
+      <div className="flex-1 flex flex-col lg:flex-row">
         {/* Map Section */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative min-h-[420px] lg:min-h-full">
           <LoadScript googleMapsApiKey={GOOGLE_MAPS_API_KEY}>
             <GoogleMap
               mapContainerStyle={mapStyles}
@@ -230,7 +230,7 @@ export default function LiveTracking() {
         </div>
 
         {/* Student List Sidebar */}
-        <div className="w-80 bg-[#0a1628] border-l border-white/10 overflow-y-auto">
+        <div className="w-full lg:w-80 bg-[#0a1628] border-t border-white/10 lg:border-t-0 lg:border-l overflow-y-auto">
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-white">Live Students</h3>

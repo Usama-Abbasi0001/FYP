@@ -36,11 +36,11 @@ export default function StudentDashboard() {
   ];
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-[#0a1628] via-[#152238] to-[#1a2f4a]">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-gradient-to-br from-[#0a1628] via-[#152238] to-[#1a2f4a]">
       <Sidebar />
 
       <div className="flex-1 overflow-y-auto">
-        <div className="p-8">
+        <div className="p-6 sm:p-8">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-white mb-2">Student Safety Dashboard</h1>
