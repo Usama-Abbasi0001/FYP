@@ -18,10 +18,10 @@ import LiveTracking from '../pages/LiveTracking';
 function DashboardRouter() {
   return (
     <Routes>
-      <Route path="/admin" element={<AdminDashboard />} />
-      <Route path="/student" element={<StudentDashboard />} />
-      <Route path="/parent" element={<ParentDashboard />} />
-      <Route path="*" element={<Navigate to="/admin" replace />} />
+      <Route path="admin" element={<AdminDashboard />} />
+      <Route path="student" element={<StudentDashboard />} />
+      <Route path="parent" element={<ParentDashboard />} />
+      <Route path="*" element={<Navigate to="admin" replace />} />
     </Routes>
   );
 }

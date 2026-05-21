@@ -34,28 +34,26 @@ export default function Sidebar() {
 
     const commonItems = [
       { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-      { icon: Map, label: 'Live Tracking', path: '/tracking' },
-      { icon: Bell, label: 'Alerts', path: '/alerts' },
-      { icon: Settings, label: 'Settings', path: '/settings' }
+      { icon: Map, label: 'Live Tracking', path: '/tracking' }
     ];
 
     const roleSpecificItems = {
       admin: [
-        { icon: Users, label: 'User Management', path: '/users' },
-        { icon: Activity, label: 'Emergency Monitor', path: '/emergency' },
-        { icon: Shield, label: 'Devices', path: '/devices' }
+        { icon: Users, label: 'User Management', path: '/dashboard/admin' },
+        { icon: Activity, label: 'Emergency Monitor', path: '/dashboard/admin' },
+        { icon: Shield, label: 'Devices', path: '/dashboard/admin' }
       ],
       student: [
-        { icon: PhoneCall, label: 'Emergency Contacts', path: '/contacts' },
-        { icon: UserCircle, label: 'Profile', path: '/profile' }
+        { icon: PhoneCall, label: 'Emergency Contacts', path: '/dashboard/student' },
+        { icon: UserCircle, label: 'Profile', path: '/dashboard/student' }
       ],
       parent: [
-        { icon: Users, label: 'My Children', path: '/children' },
-        { icon: Activity, label: 'Activity Log', path: '/activity' }
+        { icon: Users, label: 'My Children', path: '/dashboard/parent' },
+        { icon: Activity, label: 'Activity Log', path: '/dashboard/parent' }
       ],
       security: [
-        { icon: AlertTriangle, label: 'Emergency Response', path: '/response' },
-        { icon: Activity, label: 'Incident Log', path: '/incidents' }
+        { icon: AlertTriangle, label: 'Emergency Response', path: '/dashboard/admin' },
+        { icon: Activity, label: 'Incident Log', path: '/dashboard/admin' }
       ]
     };
 
@@ -87,7 +85,7 @@ export default function Sidebar() {
 
           return (
             <Link
-              key={item.path}
+              key={`${item.path}-${item.label}`}
               to={item.path}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                 isActive
