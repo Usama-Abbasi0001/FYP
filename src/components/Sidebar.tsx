@@ -29,7 +29,7 @@ export default function Sidebar() {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login');
+      navigate(userData?.role === 'admin' ? '/login' : '/portal');
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -46,9 +46,10 @@ export default function Sidebar() {
 
     const roleSpecificItems = {
       admin: [
-        { icon: Users, label: 'User Management', path: '/dashboard/admin' },
-        { icon: Activity, label: 'Emergency Monitor', path: '/dashboard/admin' },
-        { icon: Shield, label: 'Devices', path: '/dashboard/admin' }
+        { icon: Users, label: 'Dashboard', path: '/dashboard/admin' },
+        { icon: Users, label: 'All Students', path: '/dashboard/admin/students' },
+        { icon: Activity, label: 'Devices', path: '/dashboard/admin/devices' },
+        { icon: AlertTriangle, label: 'Alerts', path: '/dashboard/admin/alerts' }
       ],
       student: [
         { icon: PhoneCall, label: 'Emergency Contacts', path: '/dashboard/student' },
@@ -57,10 +58,6 @@ export default function Sidebar() {
       parent: [
         { icon: Users, label: 'My Children', path: '/dashboard/parent' },
         { icon: Activity, label: 'Activity Log', path: '/dashboard/parent' }
-      ],
-      security: [
-        { icon: AlertTriangle, label: 'Emergency Response', path: '/dashboard/admin' },
-        { icon: Activity, label: 'Incident Log', path: '/dashboard/admin' }
       ]
     };
 

@@ -1,137 +1,132 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import Sidebar from '../components/Sidebar';
 import StatCard from '../components/StatCard';
-import { Users, Shield, AlertTriangle, Activity, MapPin, Bell, TrendingUp, Battery } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import {
+  Users,
+  Shield,
+  AlertTriangle,
+  Activity,
+  UserPlus,
+  Copy,
+  CheckCircle
+} from 'lucide-react';
 import { motion } from 'motion/react';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { useAuth, CreatedUserCredentials } from '../contexts/AuthContext';
+
+type Tab = 'parent' | 'student';
+
+function CredentialsModal({
+  credentials,
+  onClose
+}: {
+  credentials: CreatedUserCredentials;
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const portalUrl = `${window.location.origin}/portal`;
+  const details = `Role: ${credentials.role}
+Name: ${credentials.name}
+Login ID: ${credentials.loginId}
+Password: ${credentials.password}
+Portal: ${portalUrl}`;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+      <div className="w-full max-w-md rounded-2xl border border-emerald-500/30 bg-[#0f1f35] p-6 shadow-2xl">
+        <div className="mb-4 flex items-center gap-3">
+          <CheckCircle className="h-6 w-6 text-emerald-400" />
+          <h3 className="text-lg font-semibold text-white">User Created</h3>
+        </div>
+        <div className="space-y-2 rounded-xl bg-white/5 p-4 text-sm text-gray-300">
+          <p><span className="text-gray-500">Login ID:</span> <span className="font-mono text-emerald-300">{credentials.loginId}</span></p>
+          <p><span className="text-gray-500">Password:</span> <span className="font-mono text-emerald-300">{credentials.password}</span></p>
+        </div>
+        <div className="mt-4 flex gap-3">
+          <button
+            type="button"
+            onClick={async () => {
+              await navigator.clipboard.writeText(details);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 2000);
+            }}
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-white"
+          >
+            <Copy className="h-4 w-4" />
+            {copied ? 'Copied!' : 'Copy'}
+          </button>
+          <button type="button" onClick={onClose} className="rounded-lg border border-white/10 px-4 py-2 text-gray-300">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
-  const [liveAlerts, setLiveAlerts] = useState<any[]>([]);
-  const [stats, setStats] = useState({
-    totalStudents: 1247,
-    activeDevices: 1189,
-    todayAlerts: 3,
-    emergencyCalls: 0
+  const { managedUsers, createParentUser, createStudentUser } = useAuth();
+  const [activeTab, setActiveTab] = useState<Tab>('parent');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [credentials, setCredentials] = useState<CreatedUserCredentials | null>(null);
+
+  const students = managedUsers.filter((u) => u.role === 'student');
+  const parents = managedUsers.filter((u) => u.role === 'parent');
+
+  const parentForm = useFormik({
+    initialValues: { name: '', nic: '', address: '', phone: '' },
+    validationSchema: Yup.object({
+      name: Yup.string().required('Required'),
+      nic: Yup.string().required('Required'),
+      address: Yup.string().required('Required'),
+      phone: Yup.string().required('Required')
+    }),
+    onSubmit: (values, { resetForm }) => {
+      try {
+        setLoading(true);
+        setError('');
+        setCredentials(createParentUser(values));
+        resetForm();
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
+    }
   });
 
-  const weeklyAlerts = [
-    { day: 'Mon', alerts: 2 },
-    { day: 'Tue', alerts: 4 },
-    { day: 'Wed', alerts: 1 },
-    { day: 'Thu', alerts: 6 },
-    { day: 'Fri', alerts: 3 },
-    { day: 'Sat', alerts: 0 },
-    { day: 'Sun', alerts: 1 }
-  ];
-
-  const deviceStatus = [
-    { name: 'Active', value: 1189, color: '#10b981' },
-    { name: 'Inactive', value: 45, color: '#6b7280' },
-    { name: 'Low Battery', value: 13, color: '#f59e0b' }
-  ];
-
-  const recentAlerts = [
-    {
-      id: 1,
-      type: 'SOS',
-      student: 'Sarah Johnson',
-      location: 'Library Building',
-      time: '2 mins ago',
-      status: 'Active',
-      severity: 'high'
-    },
-    {
-      id: 2,
-      type: 'Fall Detected',
-      student: 'Mike Chen',
-      location: 'Sports Complex',
-      time: '15 mins ago',
-      status: 'Resolved',
-      severity: 'medium'
-    },
-    {
-      id: 3,
-      type: 'Safe Zone Exit',
-      student: 'Emma Davis',
-      location: 'Campus Gate 3',
-      time: '1 hour ago',
-      status: 'Acknowledged',
-      severity: 'low'
+  const studentForm = useFormik({
+    initialValues: { name: '', seatNumber: '', parentId: '', parentName: '', phone: '' },
+    validationSchema: Yup.object({
+      name: Yup.string().required('Required'),
+      seatNumber: Yup.string().required('Required'),
+      parentName: Yup.string().required('Required'),
+      phone: Yup.string().required('Required')
+    }),
+    onSubmit: (values, { resetForm }) => {
+      try {
+        setLoading(true);
+        setError('');
+        setCredentials(
+          createStudentUser({
+            name: values.name,
+            seatNumber: values.seatNumber,
+            parentName: values.parentName,
+            parentId: values.parentId || undefined,
+            phone: values.phone
+          })
+        );
+        resetForm();
+      } catch (err) {
+        setError((err as Error).message);
+      } finally {
+        setLoading(false);
+      }
     }
-  ];
-
-  useEffect(() => {
-    const today = new Date();
-
-    const parseDate = (value: any) => {
-      if (!value) return null;
-      if (typeof value?.toDate === 'function') return value.toDate();
-      return new Date(value);
-    };
-
-    const studentsQuery = query(collection(db, 'users'), where('role', '==', 'student'));
-    const studentSub = onSnapshot(studentsQuery, (snapshot) => {
-      if (snapshot.size > 0) {
-        setStats((prev) => ({ ...prev, totalStudents: snapshot.size }));
-      }
-    });
-
-    const locationsSub = onSnapshot(collection(db, 'studentLocations'), (snapshot) => {
-      if (snapshot.size > 0) {
-        setStats((prev) => ({ ...prev, activeDevices: snapshot.size }));
-      }
-    });
-
-    const alertsSub = onSnapshot(collection(db, 'alerts'), (snapshot) => {
-      if (snapshot.size > 0) {
-        let todayAlerts = 0;
-        let emergencyCalls = 0;
-        const alerts: any[] = [];
-
-        snapshot.docs.forEach((doc) => {
-          const data = doc.data();
-          const createdAt = parseDate(data.createdAt ?? data.timestamp ?? data.time);
-          const isToday = createdAt?.toDateString() === today.toDateString();
-          if (isToday) todayAlerts += 1;
-
-          const type = String(data.type ?? data.alertType ?? '').toLowerCase();
-          const severity = String(data.severity ?? '').toLowerCase();
-          if (type.includes('sos') || type.includes('emergency') || severity === 'high') {
-            emergencyCalls += 1;
-          }
-
-          alerts.push({ id: doc.id, ...data });
-        });
-
-        setStats((prev) => ({ ...prev, todayAlerts, emergencyCalls }));
-        setLiveAlerts(alerts);
-      } else {
-        setLiveAlerts(recentAlerts);
-      }
-    });
-
-    return () => {
-      studentSub();
-      locationsSub();
-      alertsSub();
-    };
-  }, []);
-
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'high':
-        return 'border-red-500/50 bg-red-500/10';
-      case 'medium':
-        return 'border-orange-500/50 bg-orange-500/10';
-      case 'low':
-        return 'border-yellow-500/50 bg-yellow-500/10';
-      default:
-        return 'border-gray-500/50 bg-gray-500/10';
-    }
-  };
+  });
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-gradient-to-br from-[#0a1628] via-[#152238] to-[#1a2f4a]">
@@ -139,179 +134,138 @@ export default function AdminDashboard() {
 
       <div className="flex-1 overflow-y-auto">
         <div className="p-6 sm:p-8">
-          {/* Header */}
           <div className="mb-8">
             <h1 className="text-white mb-2">Admin Dashboard</h1>
-            <p className="text-gray-400">Real-time campus safety monitoring and analytics</p>
+            <p className="text-gray-400">Local in-memory campus safety management</p>
           </div>
 
-          {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Link to="/dashboard/admin/students" className="block rounded-3xl transition hover:-translate-y-1 hover:shadow-2xl hover:shadow-slate-900/20">
-              <StatCard
-                icon={Users}
-                label="Total Students"
-                value={stats.totalStudents}
-                change="+12 this month"
-                changeType="positive"
-                color="blue"
-              />
-            </Link>
-            <Link to="/dashboard/admin/devices" className="block rounded-3xl transition hover:-translate-y-1 hover:shadow-2xl hover:shadow-slate-900/20">
-              <StatCard
-                icon={Shield}
-                label="Active Devices"
-                value={stats.activeDevices}
-                change={`${Math.round((stats.activeDevices / stats.totalStudents) * 100)}% online`}
-                changeType="positive"
-                color="green"
-              />
-            </Link>
-            <Link to="/dashboard/admin/alerts" className="block rounded-3xl transition hover:-translate-y-1 hover:shadow-2xl hover:shadow-slate-900/20">
-              <StatCard
-                icon={AlertTriangle}
-                label="Today's Alerts"
-                value={stats.todayAlerts}
-                change="-2 from yesterday"
-                changeType="positive"
-                color="orange"
-              />
-            </Link>
-            <Link to="/dashboard/admin/emergencies" className="block rounded-3xl transition hover:-translate-y-1 hover:shadow-2xl hover:shadow-slate-900/20">
-              <StatCard
-                icon={Activity}
-                label="Emergency Calls"
-                value={stats.emergencyCalls}
-                change="All clear"
-                changeType="positive"
-                color="purple"
-              />
-            </Link>
+            <StatCard icon={Users} label="Total Students" value={students.length} change="Live count" changeType="positive" color="blue" />
+            <StatCard icon={Users} label="Total Parents" value={parents.length} change="Live count" changeType="positive" color="green" />
+            <StatCard icon={Shield} label="Managed Users" value={managedUsers.length} change="In memory" changeType="positive" color="purple" />
+            <StatCard icon={Activity} label="System Mode" value="Local" change="No Firebase" changeType="positive" color="orange" />
           </div>
 
-          {/* Charts Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Weekly Alerts Chart */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10"
-            >
-              <h3 className="text-white mb-4">Weekly Alert Trends</h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={weeklyAlerts}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff20" />
-                  <XAxis dataKey="day" stroke="#9ca3af" />
-                  <YAxis stroke="#9ca3af" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#1a2f4a',
-                      border: '1px solid #ffffff20',
-                      borderRadius: '8px',
-                      color: '#fff'
-                    }}
-                  />
-                  <Bar dataKey="alerts" fill="#3b82f6" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </motion.div>
-
-            {/* Device Status Chart */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10"
-            >
-              <h3 className="text-white mb-4">Device Status Distribution</h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={deviceStatus}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {deviceStatus.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#1a2f4a',
-                      border: '1px solid #ffffff20',
-                      borderRadius: '8px',
-                      color: '#fff'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </motion.div>
-          </div>
-
-          {/* Recent Alerts */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white/5 backdrop-blur-lg rounded-xl p-6 border border-white/10"
+            className="mb-8 rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-lg"
           >
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-              <h3 className="text-white">Recent Alerts</h3>
-              <button className="w-full sm:w-auto px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-all border border-blue-500/30">
-                View All
+            <h3 className="text-white mb-4 flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-blue-400" />
+              Create User
+            </h3>
+
+            <div className="mb-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveTab('parent')}
+                className={`rounded-lg px-4 py-2 text-sm ${activeTab === 'parent' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : 'bg-white/5 text-gray-400 border border-white/10'}`}
+              >
+                Parent
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('student')}
+                className={`rounded-lg px-4 py-2 text-sm ${activeTab === 'student' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : 'bg-white/5 text-gray-400 border border-white/10'}`}
+              >
+                Student
               </button>
             </div>
 
-            <div className="space-y-4">
-              {liveAlerts.map((alert) => (
-                <motion.div
-                  key={alert.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className={`p-4 rounded-lg border ${getSeverityColor(alert.severity)} flex items-center justify-between`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-lg ${alert.severity === 'high' ? 'bg-red-500/20' : alert.severity === 'medium' ? 'bg-orange-500/20' : 'bg-yellow-500/20'} flex items-center justify-center border ${alert.severity === 'high' ? 'border-red-500/30' : alert.severity === 'medium' ? 'border-orange-500/30' : 'border-yellow-500/30'}`}>
-                      <AlertTriangle className={`w-6 h-6 ${alert.severity === 'high' ? 'text-red-400' : alert.severity === 'medium' ? 'text-orange-400' : 'text-yellow-400'}`} />
+            {error && (
+              <div className="mb-4 flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-red-400 text-sm">
+                <AlertTriangle className="h-4 w-4" />
+                {error}
+              </div>
+            )}
+
+            {activeTab === 'parent' ? (
+              <form onSubmit={parentForm.handleSubmit} className="grid gap-3 sm:grid-cols-2">
+                <input {...parentForm.getFieldProps('name')} placeholder="Parent Name" className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white" />
+                <input {...parentForm.getFieldProps('nic')} placeholder="NIC Number" className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white" />
+                <input {...parentForm.getFieldProps('phone')} placeholder="Phone" className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white" />
+                <input {...parentForm.getFieldProps('address')} placeholder="Address" className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white sm:col-span-2" />
+                <button type="submit" disabled={loading} className="sm:col-span-2 rounded-lg bg-blue-600 py-3 text-white hover:bg-blue-500 disabled:opacity-60">
+                  {loading ? 'Creating...' : 'Create Parent'}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={studentForm.handleSubmit} className="grid gap-3 sm:grid-cols-2">
+                <input {...studentForm.getFieldProps('name')} placeholder="Student Name" className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white" />
+                <input {...studentForm.getFieldProps('seatNumber')} placeholder="Seat Number" className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white" />
+                <input {...studentForm.getFieldProps('parentName')} placeholder="Parent Name" className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white" />
+                <input {...studentForm.getFieldProps('phone')} placeholder="Phone" className="rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white" />
+                {parents.length > 0 && (
+                  <select
+                    value={studentForm.values.parentId}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      studentForm.setFieldValue('parentId', id);
+                      const parent = parents.find((p) => p.id === id);
+                      if (parent) studentForm.setFieldValue('parentName', parent.name);
+                    }}
+                    className="rounded-lg border border-white/10 bg-[#152238] px-4 py-3 text-white sm:col-span-2"
+                  >
+                    <option value="">Link to existing parent (optional)</option>
+                    {parents.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name} ({p.loginId})</option>
+                    ))}
+                  </select>
+                )}
+                <button type="submit" disabled={loading} className="sm:col-span-2 rounded-lg bg-blue-600 py-3 text-white hover:bg-blue-500 disabled:opacity-60">
+                  {loading ? 'Creating...' : 'Create Student'}
+                </button>
+              </form>
+            )}
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-lg"
+          >
+            <h3 className="text-white mb-4">All Created Users ({managedUsers.length})</h3>
+
+            {managedUsers.length === 0 ? (
+              <p className="text-gray-400 text-sm">No users yet. Create a parent or student above.</p>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {managedUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    className="rounded-xl border border-white/10 bg-[#0a1628]/60 p-4"
+                  >
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className={`rounded-full px-2 py-0.5 text-xs capitalize ${user.role === 'student' ? 'bg-blue-500/20 text-blue-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
+                        {user.role}
+                      </span>
+                      <span className="font-mono text-xs text-gray-500">{user.loginId}</span>
                     </div>
-                    <div>
-                      <div className="flex items-center gap-3 mb-1">
-                        <h4 className="text-white">{alert.type}</h4>
-                        <span className={`px-2 py-1 rounded text-xs ${alert.status === 'Active' ? 'bg-red-500/20 text-red-400' : alert.status === 'Resolved' ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                          {alert.status}
-                        </span>
-                      </div>
-                      <p className="text-gray-400">{alert.student}</p>
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-2 text-sm text-gray-500">
-                        <span className="flex flex-1 min-w-0 items-center gap-1 truncate text-gray-300">
-                          <MapPin className="w-4 h-4" />
-                          <span className="truncate">{alert.location}</span>
-                        </span>
-                        <span>{alert.time}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button className="px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-all border border-blue-500/30">
-                      View
-                    </button>
-                    {alert.status === 'Active' && (
-                      <button className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-all border border-green-500/30">
-                        Respond
-                      </button>
+                    <p className="text-white font-medium">{user.name}</p>
+                    {user.phone && <p className="text-sm text-gray-400 mt-1">Phone: {user.phone}</p>}
+                    {user.seatNumber && <p className="text-sm text-gray-400">Seat: {user.seatNumber}</p>}
+                    {user.nic && <p className="text-sm text-gray-400">NIC: {user.nic}</p>}
+                    {user.address && <p className="text-sm text-gray-400 truncate">Address: {user.address}</p>}
+                    {user.parentName && <p className="text-sm text-gray-400">Parent: {user.parentName}</p>}
+                    <p className="text-xs text-gray-500 mt-2">Created: {new Date(user.createdAt).toLocaleString()}</p>
+                    {user.role === 'student' && (
+                      <Link to={`/student/${user.id}`} className="mt-3 inline-block text-sm text-blue-400 hover:text-blue-300">
+                        View profile
+                      </Link>
                     )}
                   </div>
-                </motion.div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </motion.div>
         </div>
       </div>
+
+      {credentials && (
+        <CredentialsModal credentials={credentials} onClose={() => setCredentials(null)} />
+      )}
     </div>
   );
 }

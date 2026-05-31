@@ -12,7 +12,7 @@ export default function LandingPage() {
     {
       icon: Bell,
       title: 'Instant SOS Alerts',
-      description: 'Emergency button sends immediate alerts to security and parents'
+      description: 'Emergency button sends immediate alerts to administrators and parents'
     },
     {
       icon: Activity,
@@ -51,15 +51,9 @@ export default function LandingPage() {
             <div className="flex items-center gap-4">
               <Link
                 to="/login"
-                className="px-6 py-2 text-white hover:text-blue-400 transition-colors"
-              >
-                Login
-              </Link>
-              <Link
-                to="/signup"
                 className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-500 hover:to-blue-400 transition-all shadow-lg shadow-blue-500/30"
               >
-                Get Started
+                Admin Login
               </Link>
             </div>
           </div>
@@ -83,14 +77,11 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
-              to="/signup"
+              to="/login"
               className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-500 hover:to-blue-400 transition-all shadow-lg shadow-blue-500/30 text-lg"
             >
-              Start Free Trial
+              Admin Login
             </Link>
-            <button className="px-8 py-4 bg-white/5 text-white rounded-lg hover:bg-white/10 transition-all border border-white/10 text-lg">
-              Watch Demo
-            </button>
           </div>
         </motion.div>
 
@@ -148,13 +139,13 @@ export default function LandingPage() {
         >
           <h2 className="text-white mb-4">Ready to Make Your Campus Safer?</h2>
           <p className="text-gray-400 mb-8 max-w-2xl mx-auto">
-            Join hundreds of educational institutions using our platform to protect their students
+            Campus administrators can manage student safety, create accounts, and monitor alerts from a single dashboard.
           </p>
           <Link
-            to="/signup"
+            to="/login"
             className="inline-block px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-500 hover:to-blue-400 transition-all shadow-lg shadow-blue-500/30"
           >
-            Get Started Today
+            Admin Login
           </Link>
         </motion.div>
       </div>

@@ -57,7 +57,7 @@ export default function StudentDashboard() {
               <div>
                 <h2 className="text-white mb-2">Emergency SOS</h2>
                 <p className="text-gray-400 mb-4">
-                  Press and hold to send emergency alert to campus security and your emergency contacts
+                  Press and hold to send emergency alert to campus administrators and your emergency contacts
                 </p>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <Shield className="w-4 h-4" />
